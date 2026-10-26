@@ -21,6 +21,7 @@ class FelicitaCoordinator(DataUpdateCoordinator):
             hass,
             _LOGGER,
             name="Felicita scale coordinator",
+            config_entry=config_entry,
             update_interval=None,  # Disable periodic updates
         )
 
