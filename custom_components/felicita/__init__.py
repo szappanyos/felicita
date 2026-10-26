@@ -26,16 +26,22 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
     # Load platforms
     await hass.config_entries.async_forward_entry_setups(config_entry, PLATFORMS)
 
-    # Register a reload service
-    async def reload_service(call):
-        """Reload the integration."""
-        await async_unload_entry(hass, config_entry)
-        await async_setup_entry(hass, config_entry)
-
-    if not hass.services.has_service(DOMAIN, "reload"):
-        hass.services.async_register(DOMAIN, "reload", reload_service)
+    # Reload this entry when its options/data change. HA manages the config
+    # entry state transitions for us, so we must NOT call async_setup_entry
+    # ourselves (that leaves the entry in LOADED state and breaks
+    # async_config_entry_first_refresh on the next setup).
+    config_entry.async_on_unload(
+        config_entry.add_update_listener(_async_update_listener)
+    )
 
     return True
+
+
+async def _async_update_listener(
+    hass: HomeAssistant, config_entry: ConfigEntry
+) -> None:
+    """Handle options update by reloading the config entry the proper way."""
+    await hass.config_entries.async_reload(config_entry.entry_id)
 
 
 async def async_unload_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
